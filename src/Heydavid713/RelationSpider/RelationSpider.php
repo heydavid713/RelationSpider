@@ -179,7 +179,7 @@ trait RelationSpider
         // foreign key name by using the name of the relationship function, which
         // when combined with an "_id" should conventionally match the columns.
         if (is_null($foreignKey)) {
-            $foreignKey = Str::snake($relation) . '_id';
+            $foreignKey = Str::snake($relation).'_id';
         }
 
         $instance = new $related();
@@ -267,11 +267,11 @@ trait RelationSpider
         // First, we'll need to determine the foreign key and "other key" for the
         // relationship. Once we have determined the keys we'll make the query
         // instances as well as the relationship instances we need for this.
-        $foreignKey = $foreignKey ?: $this->getForeignKey() . 's';
+        $foreignKey = $foreignKey ?: $this->getForeignKey().'s';
 
         $instance = new $related();
 
-        $otherKey = $otherKey ?: $instance->getForeignKey() . 's';
+        $otherKey = $otherKey ?: $instance->getForeignKey().'s';
 
         // If no table name was provided, we can guess it by concatenating the two
         // models using underscores in alphabetical order. The two model names
