@@ -1,0 +1,27 @@
+{
+    "name": "heydavid713/relation-spider",
+    "description": "Use Laravel's relationships between vendors.",
+    "type": "library",
+    "require": {
+        "illuminate/database": "5.1.*|5.2.*|5.3.*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^5.5"
+    },
+    "suggests":{
+        "vinelab/neoeloquent" : "It lets Spider interact with Neo4J",
+        "jenssegers/mongodb" : "It lets Spider interact with Neo4J"
+    },
+    "license": "Apache",
+    "authors": [
+        {
+            "name": "David Soto",
+            "email": "heydavid713@aim.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Heydavid713\\RelationSpider\\": "src/"
+        }
+    }
+}
