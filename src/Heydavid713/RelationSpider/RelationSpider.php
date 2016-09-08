@@ -2,49 +2,76 @@
 
 namespace Heydavid713\RelationSpider;
 
-
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;z
 
 trait RelationSpider
 {
     /**
      * Define a one-to-one relationship.
      *
-     * @param  string $related
-     * @param  string $foreignKey
-     * @param  string $localKey
+     * @param string $related
+     * @param string $foreignKey
+     * @param string $localKey
+     *
      * @return \Illuminate\Database\Eloquent\Relations\HasOne
      */
-    public function hasOne($related, $foreignKey = null, $localKey = null)
+    public function hasOne($related, $foreignKey = null, $localKey = null, $relation = null)
     {
-        // Check if it is a relation with an original model.
-        if (!is_subclass_of($related, 'Jenssegers\Mongodb\Eloquent\Model')) {
-            return parent::hasOne($related, $foreignKey, $localKey);
+
+        if (is_subclass_of($related, 'Jenssegers\Mongodb\Eloquent\Model')) {
+            $foreignKey = $foreignKey ?: $this->getForeignKey();
+
+            $instance = new $related();
+
+            $localKey = $localKey ?: $this->getKeyName();
+
+            return new Jenssegers\Mongodb\Relations\HasOne($instance->newQuery(), $this, $foreignKey, $localKey);
         }
 
-        $foreignKey = $foreignKey ?: $this->getForeignKey();
+        // Check if it is a relation with an original model.
 
-        $instance = new $related;
+        if (!is_subclass_of($related, 'Vinelab\NeoEloquent\Eloquent\Model')) {
+            if (is_null($relation)) {
+                list(, $caller) = debug_backtrace(false);
+                $relation = $caller['function'];
+            }
 
-        $localKey = $localKey ?: $this->getKeyName();
+            // If no foreign key was supplied, we can use a backtrace to guess the proper
+            // foreign key name by using the name of the calling class, which
+            // will be uppercased and used as a relationship label
+            if (is_null($foreignKey)) {
+                $foreignKey = strtoupper($caller['class']);
+            }
 
-        return new HasOne($instance->newQuery(), $this, $foreignKey, $localKey);
+            $instance = new $related;
+            // Once we have the foreign key names, we'll just create a new Eloquent query
+            // for the related models and returns the relationship instance which will
+            // actually be responsible for retrieving and hydrating every relations.
+            $query = $instance->newQuery();
+
+            //$localKey === $otherKey
+            $otherKey = $localKey ?: $instance->getKeyName();
+            return new Vinelab\NeoEloquent\Eloquent\Relations\HasOne($query, $this, $foreignKey, $otherKey, $relation);
+        }
+
+        return parent::hasOne($related, $foreignKey, $localKey);
+
     }
 
     /**
      * Define a polymorphic one-to-one relationship.
      *
-     * @param  string $related
-     * @param  string $name
-     * @param  string $type
-     * @param  string $id
-     * @param  string $localKey
+     * @param string $related
+     * @param string $name
+     * @param string $type
+     * @param string $id
+     * @param string $localKey
+     *
      * @return \Illuminate\Database\Eloquent\Relations\MorphOne
      */
     public function morphOne($related, $name, $type = null, $id = null, $localKey = null)
@@ -54,7 +81,7 @@ trait RelationSpider
             return parent::morphOne($related, $name, $type, $id, $localKey);
         }
 
-        $instance = new $related;
+        $instance = new $related();
 
         list($type, $id) = $this->getMorphs($name, $type, $id);
 
@@ -68,9 +95,10 @@ trait RelationSpider
     /**
      * Define a one-to-many relationship.
      *
-     * @param  string $related
-     * @param  string $foreignKey
-     * @param  string $localKey
+     * @param string $related
+     * @param string $foreignKey
+     * @param string $localKey
+     *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
     public function hasMany($related, $foreignKey = null, $localKey = null)
@@ -82,7 +110,7 @@ trait RelationSpider
 
         $foreignKey = $foreignKey ?: $this->getForeignKey();
 
-        $instance = new $related;
+        $instance = new $related();
 
         $localKey = $localKey ?: $this->getKeyName();
 
@@ -92,11 +120,12 @@ trait RelationSpider
     /**
      * Define a polymorphic one-to-many relationship.
      *
-     * @param  string $related
-     * @param  string $name
-     * @param  string $type
-     * @param  string $id
-     * @param  string $localKey
+     * @param string $related
+     * @param string $name
+     * @param string $type
+     * @param string $id
+     * @param string $localKey
+     *
      * @return \Illuminate\Database\Eloquent\Relations\MorphMany
      */
     public function morphMany($related, $name, $type = null, $id = null, $localKey = null)
@@ -106,7 +135,7 @@ trait RelationSpider
             return parent::morphMany($related, $name, $type, $id, $localKey);
         }
 
-        $instance = new $related;
+        $instance = new $related();
 
         // Here we will gather up the morph type and ID for the relationship so that we
         // can properly query the intermediate table of a relation. Finally, we will
@@ -123,10 +152,11 @@ trait RelationSpider
     /**
      * Define an inverse one-to-one or many relationship.
      *
-     * @param  string $related
-     * @param  string $foreignKey
-     * @param  string $otherKey
-     * @param  string $relation
+     * @param string $related
+     * @param string $foreignKey
+     * @param string $otherKey
+     * @param string $relation
+     *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function belongsTo($related, $foreignKey = null, $otherKey = null, $relation = null)
@@ -152,7 +182,7 @@ trait RelationSpider
             $foreignKey = Str::snake($relation) . '_id';
         }
 
-        $instance = new $related;
+        $instance = new $related();
 
         // Once we have the foreign key names, we'll just create a new Eloquent query
         // for the related models and returns the relationship instance which will
@@ -167,9 +197,10 @@ trait RelationSpider
     /**
      * Define a polymorphic, inverse one-to-one or many relationship.
      *
-     * @param  string $name
-     * @param  string $type
-     * @param  string $id
+     * @param string $name
+     * @param string $type
+     * @param string $id
+     *
      * @return \Illuminate\Database\Eloquent\Relations\MorphTo
      */
     public function morphTo($name = null, $type = null, $id = null)
@@ -200,7 +231,7 @@ trait RelationSpider
         else {
             $class = $this->getActualClassNameForMorph($class);
 
-            $instance = new $class;
+            $instance = new $class();
 
             return new MorphTo(
                 $instance->newQuery(), $this, $id, $instance->getKeyName(), $type, $name
@@ -211,11 +242,12 @@ trait RelationSpider
     /**
      * Define a many-to-many relationship.
      *
-     * @param  string $related
-     * @param  string $collection
-     * @param  string $foreignKey
-     * @param  string $otherKey
-     * @param  string $relation
+     * @param string $related
+     * @param string $collection
+     * @param string $foreignKey
+     * @param string $otherKey
+     * @param string $relation
+     *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
      */
     public function belongsToMany($related, $collection = null, $foreignKey = null, $otherKey = null, $relation = null)
@@ -237,7 +269,7 @@ trait RelationSpider
         // instances as well as the relationship instances we need for this.
         $foreignKey = $foreignKey ?: $this->getForeignKey() . 's';
 
-        $instance = new $related;
+        $instance = new $related();
 
         $otherKey = $otherKey ?: $instance->getForeignKey() . 's';
 
