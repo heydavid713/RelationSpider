@@ -35,7 +35,7 @@ trait RelationSpider
 
         // Check if it is a relation with an original model.
 
-        if (!is_subclass_of($related, 'Vinelab\NeoEloquent\Eloquent\Model')) {
+        if (is_subclass_of($related, 'Vinelab\NeoEloquent\Eloquent\Model')) {
             if (is_null($relation)) {
                 list(, $caller) = debug_backtrace(false);
                 $relation = $caller['function'];
@@ -122,7 +122,6 @@ trait RelationSpider
             $query = $instance->newQuery();
             $otherKey = $otherKey ?: $instance->getKeyName();
             return new \Heydavid713\RelationSpider\Eloquent\Relations\BelongsTo($query, $this, $foreignKey, $otherKey, $relation);
-            return new \Vinelab\NeoEloquent\Eloquent\Relations\BelongsTo($query, $this, $foreignKey, $otherKey, $relation);
         }
 
 
