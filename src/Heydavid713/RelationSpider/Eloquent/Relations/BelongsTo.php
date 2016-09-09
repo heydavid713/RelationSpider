@@ -22,7 +22,7 @@ class BelongsTo extends \Illuminate\Database\Eloquent\Relations\BelongsTo
                 // Tell the query that we only need the related model returned.
                 $this->query->select($this->relation);
                 // Set the parent node's placeholder as the RETURN key.
-                $this->query->getQuery()->from = array($parentNode);
+                $this->query->getQuery()->from = [$parentNode];
                 // Build the MATCH ()<-[]-() Cypher clause.
                 $this->query->matchIn($this->parent, $this->related, $this->relation, $this->foreignKey, $this->otherKey, $this->parent->{$this->otherKey});
                 // Add WHERE clause over the parent node's matching key = value.
